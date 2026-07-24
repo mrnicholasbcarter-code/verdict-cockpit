@@ -1,53 +1,51 @@
-# llm-gate-cockpit
+# Verdict Cockpit — Next.js Dashboard
 
-Real-time React/TypeScript dashboard for monitoring algorithmic crypto and
-prediction-market trades routed through the llm-gate ecosystem.
-
-Built with Next.js, TypeScript, Zustand (atomic state) and Framer Motion for
-60fps order-book delta animations.
+Real-time routing management console for the Verdict ecosystem.
 
 ## Features
 
-- Zero-latency WebSockets: `useOrderBook` binds directly to streaming L2 deltas.
-- Atomic state: Zustand slices avoid React context re-render thrashing on fast
-  market moves.
-- Virtualized order book: `VirtualizedOrderBook` renders deep books without
-  dropping frames.
-- Risk authority UI: live visualization of `llm-gate-risk` telemetry.
+- **Policy Editor** — YAML/TOML policy management with validation
+- **Model Catalog** — Live model pricing, latency, capability matrix
+- **Live Routing Telemetry** — WebSocket stream of routing decisions
+- **Eligibility Gate Visualizer** — See why models were included/excluded
+- **Cost/Latency Analytics** — P50/P95/P99, cost per 1k tokens
+- **A/B Testing** — Compare routing policies side-by-side
 
-## Quickstart
+## Quick Start
 
 ```bash
+# Install dependencies
 npm install
-npm run dev      # http://localhost:3000
+
+# Start dev server
+npm run dev
+
+# Build for production
+npm run build
+npm start
 ```
 
-## Scripts
-
-- `npm run dev` — start the Next.js dev server.
-- `npm run build` — production build.
-- `npm run start` — serve the production build.
-- `npm test` — run the Jest suite.
-
-## Project layout
+## Architecture
 
 ```
-src/
-  components/   UI (VirtualizedOrderBook, ...)
-  hooks/        useOrderBook and other data hooks
-  lib/          tradingStore (Zustand) and helpers
-  pages/        Next.js routes
-  styles/       global CSS
-tests/          Jest tests
+verdict-cockpit/
+├── app/                    # Next.js 14 App Router
+│   ├── api/               # API routes
+│   ├── dashboard/         # Dashboard pages
+│   └── components/        # React components
+├── lib/                   # Shared utilities
+├── hooks/                 # Custom React hooks
+└── types/                 # TypeScript types (shared with verdict-node)
 ```
 
-## Related repos
+## Environment
 
-- `llm-gate-core` — routing/eligibility control plane
-- `llm-gate-risk` — trade risk engine feeding this dashboard
-- `llm-gate-strategy` — edge-mining framework
-- `llm-gate-backtest` — backtest harness
+```env
+NEXT_PUBLIC_VERDICT_API=http://localhost:8000
+NEXT_PUBLIC_WS_URL=ws://localhost:8000/ws
+```
 
-## License
+## Links
 
-MIT
+- **Verdict Core**: https://github.com/verdict/verdict-core
+- **Verdict Node**: https://github.com/verdict/verdict-node
