@@ -7,21 +7,19 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test": "jest"
+    "test": "jest",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@types/react-window": "^1.8.8",
+    "@bodanglin/verdict-contracts": "^0.1.0",
     "autoprefixer": "^10.5.2",
-    "framer-motion": "^11.0.0",
-    "lightweight-charts": "^5.2.0",
     "lucide-react": "^0.360.0",
-    "next": "14.2.0",
-    "postcss": "^8.5.17",
+    "next": "14.2.35",
+    "postcss": "^8.5.26",
     "react": "^18",
     "react-dom": "^18",
-    "react-window": "^1.8.10",
-    "socket.io-client": "^4.7.5",
-    "zustand": "^4.5.2"
+    "zod": "^3.25.76",
+    "zustand": "^4.5.7"
   },
   "devDependencies": {
     "@playwright/test": "^1.61.1",
@@ -32,12 +30,13 @@
     "@types/react": "^18",
     "@types/react-dom": "^18",
     "eslint": "^8",
+    "eslint-config-next": "14.2.35",
     "identity-obj-proxy": "^3.0.0",
     "jest": "^30.4.2",
     "jest-environment-jsdom": "^30.4.1",
     "tailwindcss": "^3.4.19",
     "ts-jest": "^29.4.11",
     "ts-node": "^10.9.2",
-    "typescript": "^5"
+    "typescript": "^5.9.3"
   }
 }

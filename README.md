@@ -1,51 +1,35 @@
-# Verdict Cockpit — Next.js Dashboard
+# Verdict Cockpit
 
-Real-time routing management console for the Verdict ecosystem.
+Read-only inspection surface for Trusted Change Reports and AutoDev Route Lab evidence.
 
-## Features
+Ruflo coordinates work, OmniRoute serves routes, workers produce changes, Git and CI provide source and check evidence, and Verdict decides what that evidence may authorize. The Cockpit renders those decisions; it does not select models, score providers, mutate policy, or promote routes.
 
-- **Policy Editor** — YAML/TOML policy management with validation
-- **Model Catalog** — Live model pricing, latency, capability matrix
-- **Live Routing Telemetry** — WebSocket stream of routing decisions
-- **Eligibility Gate Visualizer** — See why models were included/excluded
-- **Cost/Latency Analytics** — P50/P95/P99, cost per 1k tokens
-- **A/B Testing** — Compare routing policies side-by-side
+## Current slice
 
-## Quick Start
+- Exact repository, base commit, patch commit, and patch digest binding
+- Accepted, denied, and unknown change reports with independent check receipts
+- OmniRoute-attributed route-used evidence
+- Counterfactual route observations and advisory-only candidate recommendation
+- Deterministic fixture mode rendered with the same typed contract projection intended for live reports
+
+There is no live Cockpit API in this repository. The current UI visibly labels fixture mode, and all displayed run IDs, commits, evidence digests, checks, route observations, costs, and latencies are illustrative deterministic data.
+
+## Development
 
 ```bash
-# Install dependencies
-npm install
-
-# Start dev server
+npm ci
 npm run dev
+```
 
-# Build for production
+Verification:
+
+```bash
+npm run lint
+npm run typecheck
+npm test -- --ci
 npm run build
-npm start
 ```
 
-## Architecture
+## Contract boundary
 
-```
-verdict-cockpit/
-├── app/                    # Next.js 14 App Router
-│   ├── api/               # API routes
-│   ├── dashboard/         # Dashboard pages
-│   └── components/        # React components
-├── lib/                   # Shared utilities
-├── hooks/                 # Custom React hooks
-└── types/                 # TypeScript types (shared with verdict-node)
-```
-
-## Environment
-
-```env
-NEXT_PUBLIC_VERDICT_API=http://localhost:8000
-NEXT_PUBLIC_WS_URL=ws://localhost:8000/ws
-```
-
-## Links
-
-- **Verdict Core**: https://github.com/verdict/verdict-core
-- **Verdict Node**: https://github.com/verdict/verdict-node
+The fixture adapter imports canonical `RoutingDecision` and `OutcomeEvent` types from `@bodanglin/verdict-contracts`. Runtime input is validated locally because version `0.1.0` of that package exposes TypeScript declarations but no runtime parser export.
