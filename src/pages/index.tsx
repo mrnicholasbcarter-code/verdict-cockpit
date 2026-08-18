@@ -1,24 +1,34 @@
 import Head from 'next/head';
 import { useEffect } from 'react';
-import { formatCurrency, Market, OrderBookLevel, useTradingStore } from '@/lib/tradingStore';
-import { VirtualizedOrderBookSide } from '@/components/VirtualizedOrderBook';
-
-const statusCopy = {
-  live: 'Autonomous live',
-  paused: 'Paused',
-  guarded: 'Guarded mode',
-};
+import {
+  useRoutingStore,
+  formatCost,
+  formatLatency,
+  ProviderHealth,
+  ModelCandidate,
+} from '@/lib/routingStore';
 
 function classNames(...classes: Array<string | false | null | undefined>) {
   return classes.filter(Boolean).join(' ');
 }
 
-function Metric({ label, value, accent, subtext }: { label: string; value: string; accent?: 'green' | 'red' | 'violet' | 'amber'; subtext?: string }) {
+function Metric({
+  label,
+  value,
+  accent,
+  subtext,
+}: {
+  label: string;
+  value: string;
+  accent?: 'green' | 'red' | 'violet' | 'amber' | 'blue';
+  subtext?: string;
+}) {
   const accentClass = {
     green: 'text-green-400',
     red: 'text-red-500',
     violet: 'text-violet-400',
     amber: 'text-amber-400',
+    blue: 'text-blue-400',
   }[accent ?? 'green'];
 
   return (
@@ -30,203 +40,94 @@ function Metric({ label, value, accent, subtext }: { label: string; value: strin
   );
 }
 
+const statusDot: Record<ProviderHealth['status'], string> = {
+  healthy: 'bg-green-400',
+  degraded: 'bg-amber-400',
+  down: 'bg-red-500',
+};
+
+const statusText: Record<ProviderHealth['status'], string> = {
+  healthy: 'Healthy',
+  degraded: 'Degraded',
+  down: 'Down',
+};
+
 function Header() {
-  const botStatus = useTradingStore((state) => state.botStatus);
-  const toggleBot = useTradingStore((state) => state.toggleBot);
-  const risk = useTradingStore((state) => state.risk);
-  const toggleKillSwitch = useTradingStore((state) => state.toggleKillSwitch);
-  const latencyMs = useTradingStore((state) => state.latencyMs);
+  const policyGate = useRoutingStore((s) => s.policyGate);
+  const setPolicyGate = useRoutingStore((s) => s.setPolicyGate);
+  const isEvaluating = useRoutingStore((s) => s.isEvaluating);
+  const simulateEvaluation = useRoutingStore((s) => s.simulateEvaluation);
+  const lastUpdate = useRoutingStore((s) => s.lastUpdate);
 
   return (
     <header className="flex flex-col gap-5 border-b border-white/10 px-6 py-5 lg:flex-row lg:items-center lg:justify-between lg:px-8">
       <div>
         <div className="flex items-center gap-3">
-          <div className="grid h-11 w-11 place-items-center rounded-2xl border border-green-500/30 bg-green-500/10 shadow-glow">
-            <span className="text-xl font-black text-green-400">K</span>
+          <div className="grid h-11 w-11 place-items-center rounded-2xl border border-violet-500/30 bg-violet-500/10 shadow-glow">
+            <span className="text-xl font-black text-violet-400">V</span>
           </div>
           <div>
-            <p className="text-xs uppercase tracking-[0.32em] text-slate-500">Quantitative Trading Cockpit</p>
-            <h1 className="text-2xl font-semibold tracking-tight text-white">Kalshi Strategy Command</h1>
+            <p className="text-xs uppercase tracking-[0.32em] text-slate-500">Verdict AI Routing Cockpit</p>
+            <h1 className="text-2xl font-semibold tracking-tight text-white">Policy-Gated Model Router</h1>
           </div>
         </div>
       </div>
       <div className="flex flex-wrap items-center gap-3">
-        <div className="rounded-full border border-blue-500/30 bg-blue-500/10 px-4 py-2 text-sm text-blue-400 font-medium" title="No API credentials required for simulation">
-          Live Mock Mode
+        <div className="rounded-full border border-blue-500/30 bg-blue-500/10 px-4 py-2 text-sm font-medium text-blue-400" title="Dashboard uses bundled fixtures, no live API calls">
+          Demo Data
         </div>
         <div className="rounded-full border border-white/10 bg-white/[0.06] px-4 py-2 text-sm text-slate-300">
-          Feed latency <span className="font-semibold text-green-400 tabular-nums">{latencyMs}ms</span>
+          Policy gate{' '}
+          <span className="font-semibold text-violet-400">{policyGate}</span>
         </div>
-        <div className={classNames('rounded-full border px-4 py-2 text-sm font-medium', botStatus === 'live' ? 'border-green-500/30 bg-green-500/10 text-green-400' : botStatus === 'guarded' ? 'border-amber-400/30 bg-amber-400/10 text-amber-400' : 'border-slate-500/30 bg-slate-500/10 text-slate-300')}>
-          {statusCopy[botStatus]}
-        </div>
-        <button onClick={toggleBot} className="rounded-full border border-white/10 bg-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/15">
-          {botStatus === 'live' ? 'Pause bot' : 'Resume bot'}
+        <select
+          aria-label="Select policy gate"
+          value={policyGate}
+          onChange={(e) => setPolicyGate(e.target.value as any)}
+          className="rounded-full border border-white/10 bg-white/[0.06] px-4 py-2 text-sm text-white outline-none"
+        >
+          <option value="cost-aware">cost-aware</option>
+          <option value="latency-first">latency-first</option>
+          <option value="quality-first">quality-first</option>
+          <option value="balanced">balanced</option>
+        </select>
+        <button
+          onClick={simulateEvaluation}
+          disabled={isEvaluating}
+          className="rounded-full border border-white/10 bg-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/15 disabled:opacity-50"
+        >
+          {isEvaluating ? 'Evaluating…' : 'Re-run decision'}
         </button>
-        <button onClick={toggleKillSwitch} className={classNames('rounded-full px-4 py-2 text-sm font-bold transition', risk.killSwitch ? 'bg-red-600 text-white' : 'bg-white text-slate-900 hover:bg-slate-200')}>
-          {risk.killSwitch ? 'Kill switch armed' : 'Arm kill switch'}
-        </button>
+        <div className="text-xs text-slate-500">Updated {new Date(lastUpdate).toLocaleTimeString()}</div>
       </div>
     </header>
   );
 }
 
-function MarketRow({ market, selected }: { market: Market; selected: boolean }) {
-  const selectMarket = useTradingStore((state) => state.selectMarket);
-  return (
-    <button onClick={() => selectMarket(market.id)} className={classNames('w-full rounded-2xl border p-4 text-left transition', selected ? 'border-green-500/40 bg-green-500/[0.08] shadow-glow' : 'border-white/10 bg-white/[0.035] hover:border-white/20 hover:bg-white/[0.06]')}>
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-slate-500">
-            <span>{market.venue}</span>
-            <span className="h-1 w-1 rounded-full bg-slate-600" />
-            <span>{market.category}</span>
-          </div>
-          <h3 className="mt-2 line-clamp-2 font-semibold text-white">{market.title}</h3>
-        </div>
-        <div className={classNames('rounded-full px-2.5 py-1 text-xs font-bold tabular-nums', market.change >= 0 ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-500')}>
-          {market.change >= 0 ? '+' : ''}{market.change}%
-        </div>
-      </div>
-      <div className="mt-4 grid grid-cols-4 gap-3 text-sm">
-        <div><p className="text-slate-500">YES</p><p className="font-semibold text-green-400 tabular-nums">{market.yes.toFixed(1)}¢</p></div>
-        <div><p className="text-slate-500">NO</p><p className="font-semibold text-red-500 tabular-nums">{market.no.toFixed(1)}¢</p></div>
-        <div><p className="text-slate-500">Edge</p><p className="font-semibold text-white tabular-nums">{market.edge.toFixed(1)}%</p></div>
-        <div><p className="text-slate-500">Conf.</p><p className="font-semibold text-white tabular-nums">{market.confidence}%</p></div>
-      </div>
-    </button>
-  );
-}
-
-function MarketsPanel() {
-  const markets = useTradingStore((state) => state.markets);
-  const selectedMarketId = useTradingStore((state) => state.selectedMarketId);
+function ProviderHealthPanel() {
+  const providers = useRoutingStore((s) => s.providers);
   return (
     <section className="glass-panel p-5">
-      <div className="mb-4 flex items-center justify-between">
-        <div>
-          <p className="text-xs uppercase tracking-[0.24em] text-slate-500">Opportunity scanner</p>
-          <h2 className="text-lg font-semibold text-white">Top live markets</h2>
-        </div>
-        <span className="rounded-full bg-violet-500/15 px-3 py-1 text-xs font-semibold text-violet-300">4 signals</span>
+      <div className="mb-4">
+        <p className="text-xs uppercase tracking-[0.24em] text-slate-500">Provider telemetry</p>
+        <h2 className="text-lg font-semibold text-white">Provider health &amp; freshness</h2>
       </div>
       <div className="space-y-3">
-        {markets.map((market) => <MarketRow key={market.id} market={market} selected={market.id === selectedMarketId} />)}
-      </div>
-    </section>
-  );
-}
-
-
-
-function OrderBookPanel() {
-  const bids = useTradingStore((state) => state.bids);
-  const asks = useTradingStore((state) => state.asks);
-  const market = useTradingStore((state) => state.markets.find((candidate) => candidate.id === state.selectedMarketId));
-  const maxBidVolume = Math.max(...bids.map(l => l.volume), 1);
-  const maxAskVolume = Math.max(...asks.map(l => l.volume), 1);
-  return (
-    <section className="glass-panel p-5">
-      <div className="mb-5 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-        <div>
-          <p className="text-xs uppercase tracking-[0.24em] text-slate-500">Depth and microstructure</p>
-          <h2 className="text-xl font-semibold text-white">{market?.title}</h2>
-        </div>
-        <div className="rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-right">
-          <p className="text-xs text-slate-500">Quoted spread</p>
-          <p className="text-lg font-semibold text-white tabular-nums">{market?.spread ?? 1}¢</p>
-        </div>
-      </div>
-      <div className="grid gap-4 md:grid-cols-2">
-        <VirtualizedOrderBookSide title="Bid ladder" levels={bids} side="bid" maxVolume={maxBidVolume} />
-        <VirtualizedOrderBookSide title="Ask ladder" levels={asks} side="ask" maxVolume={maxAskVolume} />
-      </div>
-      <div className="mt-4 flex gap-4 text-xs text-slate-500 border-t border-white/10 pt-4">
-        <span>Dataset size: {bids.length + asks.length} levels</span>
-        <span>Update rate: 1.4s</span>
-        <span>Render budget: &lt;16ms (Virtualized)</span>
-      </div>
-    </section>
-  );
-}
-
-function RiskPanel() {
-  const risk = useTradingStore((state) => state.risk);
-  const fillRate = useTradingStore((state) => state.fillRate);
-  return (
-    <section className="glass-panel p-5">
-      <div className="mb-4">
-        <p className="text-xs uppercase tracking-[0.24em] text-slate-500">Risk authority</p>
-        <h2 className="text-lg font-semibold text-white">Portfolio guardrails</h2>
-      </div>
-      <div className="grid grid-cols-2 gap-3">
-        <Metric label="Buying power" value={formatCurrency(risk.buyingPower)} subtext="Available capital" />
-        <Metric label="Daily P&L" value={formatCurrency(risk.dailyPnl)} accent={risk.dailyPnl >= 0 ? 'green' : 'red'} subtext="Net realized + unrealized" />
-        <Metric label="Exposure" value={`${risk.exposure.toFixed(1)}%`} accent="violet" subtext={`${formatCurrency(risk.deployed)} deployed`} />
-        <Metric label="Fill rate" value={`${fillRate.toFixed(1)}%`} accent="amber" subtext="Last 100 orders" />
-      </div>
-      <div className="mt-5 space-y-4">
-        <div>
-          <div className="mb-2 flex justify-between text-sm"><span className="text-slate-400">Drawdown</span><span className="text-white tabular-nums">{risk.drawdown.toFixed(1)}%</span></div>
-          <div className="h-2 rounded-full bg-white/10"><div className="h-2 rounded-full bg-gradient-to-r from-green-400 to-amber-400" style={{ width: `${risk.drawdown * 9}%` }} /></div>
-        </div>
-        <div>
-          <div className="mb-2 flex justify-between text-sm"><span className="text-slate-400">95% VaR</span><span className="text-white tabular-nums">{formatCurrency(risk.var95)}</span></div>
-          <div className="h-2 rounded-full bg-white/10"><div className="h-2 rounded-full bg-gradient-to-r from-violet-500 to-red-500" style={{ width: '38%' }} /></div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function PositionsPanel() {
-  const positions = useTradingStore((state) => state.positions);
-  return (
-    <section className="glass-panel p-5">
-      <div className="mb-4 flex items-center justify-between">
-        <div>
-          <p className="text-xs uppercase tracking-[0.24em] text-slate-500">Inventory</p>
-          <h2 className="text-lg font-semibold text-white">Open positions</h2>
-        </div>
-        <span className="text-sm text-slate-400">{positions.length} active</span>
-      </div>
-      <div className="overflow-hidden rounded-2xl border border-white/10">
-        <table className="w-full text-left text-sm">
-          <thead className="bg-white/[0.04] text-xs uppercase tracking-[0.16em] text-slate-500">
-            <tr><th className="px-4 py-3">Market</th><th className="px-4 py-3">Side</th><th className="px-4 py-3 text-right">P&L</th><th className="px-4 py-3 text-right">Risk</th></tr>
-          </thead>
-          <tbody className="divide-y divide-white/10">
-            {positions.map((position) => (
-              <tr key={position.market} className="bg-white/[0.02]">
-                <td className="px-4 py-3 text-white"><div className="font-medium">{position.market}</div><div className="text-xs text-slate-500">{position.contracts.toLocaleString()} @ {position.avgPrice}¢</div></td>
-                <td className="px-4 py-3"><span className={classNames('rounded-full px-2 py-1 text-xs font-bold uppercase', position.side === 'yes' ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-500')}>{position.side}</span></td>
-                <td className={classNames('px-4 py-3 text-right font-semibold tabular-nums', position.pnl >= 0 ? 'text-green-400' : 'text-red-500')}>{formatCurrency(position.pnl)}</td>
-                <td className="px-4 py-3 text-right text-slate-300 tabular-nums">{position.risk}%</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </section>
-  );
-}
-
-function ActivityPanel() {
-  const logs = useTradingStore((state) => state.logs);
-  const toneClass = { info: 'bg-violet-400', success: 'bg-green-400', warn: 'bg-amber-400', danger: 'bg-red-500' };
-  return (
-    <section className="glass-panel p-5">
-      <div className="mb-4">
-        <p className="text-xs uppercase tracking-[0.24em] text-slate-500">Agent telemetry</p>
-        <h2 className="text-lg font-semibold text-white">Decision log</h2>
-      </div>
-      <div className="space-y-4">
-        {logs.map((log) => (
-          <div key={log.id} className="flex gap-3 rounded-2xl border border-white/10 bg-white/[0.035] p-3">
-            <span className={classNames('mt-1 h-2.5 w-2.5 rounded-full', toneClass[log.tone])} />
-            <div>
-              <div className="flex flex-wrap items-center gap-2 text-sm"><span className="font-semibold text-white">{log.agent}</span><span className="text-xs text-slate-500">{log.time}</span></div>
-              <p className="mt-1 text-sm leading-6 text-slate-300">{log.message}</p>
+        {providers.map((p) => (
+          <div key={p.name} className="rounded-2xl border border-white/10 bg-white/[0.035] p-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <span className={classNames('h-2.5 w-2.5 rounded-full', statusDot[p.status])} />
+                <span className="font-semibold text-white">{p.name}</span>
+              </div>
+              <span className={classNames('text-xs font-medium', p.status === 'healthy' ? 'text-green-400' : p.status === 'degraded' ? 'text-amber-400' : 'text-red-500')}>
+                {statusText[p.status]}
+              </span>
+            </div>
+            <div className="mt-2 grid grid-cols-3 gap-2 text-sm text-slate-400">
+              <div>Latency <span className="font-semibold text-white tabular-nums">{p.latencyMs}ms</span></div>
+              <div>Success <span className="font-semibold text-white tabular-nums">{p.successRate.toFixed(1)}%</span></div>
+              <div>Fresh <span className="font-semibold text-white tabular-nums">{new Date(p.lastCheck).toLocaleTimeString()}</span></div>
             </div>
           </div>
         ))}
@@ -235,55 +136,141 @@ function ActivityPanel() {
   );
 }
 
-function Hero() {
-  const markets = useTradingStore((state) => state.markets);
-  const bestEdge = Math.max(...markets.map((market) => market.edge));
-  const totalLiquidity = markets.reduce((sum, market) => sum + Number(market.liquidity.replace(/[$K]/g, '')), 0);
+function CandidateRow({ candidate, highlight }: { candidate: ModelCandidate; highlight?: 'selected' | 'fallback' }) {
+  const accent =
+    highlight === 'selected'
+      ? 'border-green-500/40 bg-green-500/[0.08] shadow-glow'
+      : highlight === 'fallback'
+      ? 'border-blue-500/30 bg-blue-500/[0.06]'
+      : 'border-white/10 bg-white/[0.035]';
   return (
-    <section className="grid gap-4 lg:grid-cols-4">
-      <div className="glass-panel relative overflow-hidden p-6 lg:col-span-2">
-        <div className="absolute right-0 top-0 h-40 w-40 rounded-full bg-green-500/20 blur-3xl" />
-        <p className="text-xs uppercase tracking-[0.3em] text-green-400">Live alpha routing</p>
-        <h2 className="mt-3 max-w-xl text-3xl font-semibold tracking-tight text-white">Institutional cockpit for event-market execution, risk, and agent oversight.</h2>
-        <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-400">Monitor market depth, strategy confidence, risk authority telemetry, and live autonomous bot decisions from one production-grade interface.</p>
+    <div className={classNames('rounded-2xl border p-4 transition', accent)}>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-slate-500">
+            <span>{candidate.provider}</span>
+            <span className="h-1 w-1 rounded-full bg-slate-600" />
+            <span>{candidate.status}</span>
+          </div>
+          <h3 className="mt-2 font-semibold text-white">{candidate.name}</h3>
+        </div>
+        <div className="flex flex-col items-end text-right text-sm">
+          <span className="text-slate-500">Cost</span>
+          <span className="font-semibold text-white tabular-nums">{formatCost(candidate.costPer1kTokens)}/1k</span>
+        </div>
       </div>
-      <Metric label="Best model edge" value={`${bestEdge.toFixed(1)}%`} subtext="Across active scanner" />
-      <Metric label="Visible liquidity" value={`$${totalLiquidity.toFixed(0)}K`} accent="violet" subtext="Top opportunities" />
+      <div className="mt-3 grid grid-cols-3 gap-3 text-sm">
+        <div><p className="text-slate-500">P50</p><p className="font-semibold text-white tabular-nums">{formatLatency(candidate.latencyP50Ms)}</p></div>
+        <div><p className="text-slate-500">P99</p><p className="font-semibold text-white tabular-nums">{formatLatency(candidate.latencyP99Ms)}</p></div>
+        <div><p className="text-slate-500">Capability</p><p className="font-semibold text-white tabular-nums">{candidate.capabilityScore}</p></div>
+      </div>
+      {candidate.reason ? (
+        <div className="mt-3 rounded-lg border border-red-500/20 bg-red-500/[0.06] px-3 py-2 text-xs text-red-300">
+          {candidate.reason}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function DecisionPanel() {
+  const decision = useRoutingStore((s) => s.currentDecision);
+  if (!decision) return null;
+  return (
+    <section className="glass-panel relative overflow-hidden p-6 lg:col-span-2">
+      <div className="absolute right-0 top-0 h-40 w-40 rounded-full bg-violet-500/20 blur-3xl" />
+      <p className="text-xs uppercase tracking-[0.3em] text-violet-400">Selected routing decision</p>
+      <h2 className="mt-3 text-3xl font-semibold tracking-tight text-white">{decision.selectedModel.name}</h2>
+      <p className="mt-2 text-sm text-slate-400">
+        Policy gate <span className="font-semibold text-violet-300">{decision.policyGate}</span> routed task{' '}
+        <span className="font-mono text-slate-300">{decision.taskType}</span> to {decision.selectedModel.provider}.
+      </p>
+      <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <Metric label="Estimated cost" value={formatCost(decision.estimatedCost)} accent="green" subtext="per 1k tokens est." />
+        <Metric label="Expected latency" value={formatLatency(decision.estimatedLatencyMs)} accent="violet" subtext="P50" />
+        <Metric label="Rejected" value={`${decision.rejectedCandidates.length}`} accent="amber" subtext="candidates" />
+        <Metric label="Fallback" value={decision.fallbackModel ? decision.fallbackModel.name : 'none'} accent="blue" subtext="on provider fail" />
+      </div>
+    </section>
+  );
+}
+
+function RejectedPanel() {
+  const decision = useRoutingStore((s) => s.currentDecision);
+  if (!decision) return null;
+  return (
+    <section className="glass-panel p-5">
+      <div className="mb-4 flex items-center justify-between">
+        <div>
+          <p className="text-xs uppercase tracking-[0.24em] text-slate-500">Rejected candidates</p>
+          <h2 className="text-lg font-semibold text-white">Why not selected</h2>
+        </div>
+        <span className="rounded-full bg-amber-500/15 px-3 py-1 text-xs font-semibold text-amber-300">{decision.rejectedCandidates.length}</span>
+      </div>
+      <div className="space-y-3">
+        {decision.rejectedCandidates.map((c) => (
+          <CandidateRow key={c.id} candidate={c} />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function ActivityPanel() {
+  const history = useRoutingStore((s) => s.decisionHistory);
+  return (
+    <section className="glass-panel p-5">
+      <div className="mb-4">
+        <p className="text-xs uppercase tracking-[0.24em] text-slate-500">Decision log</p>
+        <h2 className="text-lg font-semibold text-white">Recent routing decisions</h2>
+      </div>
+      <div className="space-y-3">
+        {history.map((d) => (
+          <div key={d.taskId} className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.035] p-3">
+            <span className="h-2.5 w-2.5 rounded-full bg-green-400" />
+            <div className="flex-1">
+              <div className="flex flex-wrap items-center gap-2 text-sm">
+                <span className="font-semibold text-white">{d.selectedModel.name}</span>
+                <span className="text-xs text-slate-500">{d.policyGate}</span>
+              </div>
+              <p className="text-xs text-slate-500">{new Date(d.timestamp).toLocaleTimeString()}</p>
+            </div>
+            <span className="text-xs text-slate-400 tabular-nums">{formatCost(d.estimatedCost)}</span>
+          </div>
+        ))}
+      </div>
     </section>
   );
 }
 
 export default function Home() {
-  const simulateTick = useTradingStore((state) => state.simulateTick);
-
+  const refreshProviders = useRoutingStore((s) => s.refreshProviders);
   useEffect(() => {
-    const timer = window.setInterval(simulateTick, 1400);
-    return () => window.clearInterval(timer);
-  }, [simulateTick]);
+    const interval = setInterval(refreshProviders, 5000);
+    return () => clearInterval(interval);
+  }, [refreshProviders]);
 
   return (
     <>
       <Head>
-        <title>Kalshi Trading Cockpit</title>
-        <meta name="description" content="High-tier Next.js trading cockpit for prediction markets and autonomous strategy telemetry." />
+        <title>Verdict AI Routing Cockpit — Demo Data</title>
+        <meta name="description" content="Portfolio-ready AI model routing dashboard showing policy-gated decisions, rejected candidates, provider health, cost and latency. Demo data only." />
       </Head>
-      <main className="min-h-screen bg-slate-950">
+      <div className="min-h-screen bg-[#08080c] text-slate-200">
         <Header />
-        <div className="mx-auto max-w-[1800px] space-y-5 px-4 py-5 sm:px-6 lg:px-8">
-          <Hero />
+        <main className="mx-auto max-w-[1800px] space-y-5 px-4 py-5 sm:px-6 lg:px-8">
           <div className="grid gap-5 xl:grid-cols-[420px_minmax(0,1fr)_420px]">
-            <MarketsPanel />
+            <ProviderHealthPanel />
             <div className="space-y-5">
-              <OrderBookPanel />
-              <PositionsPanel />
+              <DecisionPanel />
+              <RejectedPanel />
             </div>
             <div className="space-y-5">
-              <RiskPanel />
               <ActivityPanel />
             </div>
           </div>
-        </div>
-      </main>
+        </main>
+      </div>
     </>
   );
 }
