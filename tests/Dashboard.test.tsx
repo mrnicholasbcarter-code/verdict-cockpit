@@ -1,75 +1,54 @@
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import Home from '../src/pages/index';
-import { useTradingStore } from '../src/lib/tradingStore';
+import { useRouteLabStore } from '../src/lib/routeLabStore';
 
-jest.mock('next/head', () => {
-  return function Head({ children }: { children: React.ReactNode }) {
-    return <>{children}</>;
-  };
-});
+jest.mock('next/head', () => function Head({ children }: { children: React.ReactNode }) { return <>{children}</>; });
 
-describe('Dashboard (Home)', () => {
+const initialState = useRouteLabStore.getState();
+
+describe('AutoDev Route Lab dashboard', () => {
   beforeEach(() => {
-    // Reset global state
-    const store = useTradingStore.getState();
-    useTradingStore.setState({
-      ...store,
-      botStatus: 'live',
-      latencyMs: 14,
-      selectedMarketId: '1',
-      markets: [
-        { id: '1', venue: 'Kalshi', category: 'Crypto', title: 'Will Bitcoin reach $100k?', change: 4.2, yes: 45.1, no: 55.9, edge: 2.1, confidence: 88, spread: 2, liquidity: '$45K' },
-        { id: '2', venue: 'Kalshi', category: 'Macro', title: 'Fed cuts rates in Sept?', change: -1.2, yes: 30.0, no: 70.0, edge: 1.5, confidence: 75, spread: 1, liquidity: '$100K' }
-      ],
-      risk: { ...store.risk, killSwitch: false },
-    });
+    useRouteLabStore.setState({ reports: initialState.reports, currentReportId: 'tcr-authz-accepted', loadError: null });
   });
 
-  afterEach(() => {
-    jest.restoreAllMocks();
-  });
-
-  it('renders the header correctly', () => {
+  it('labels fixture mode and route ownership explicitly', () => {
     render(<Home />);
-    expect(screen.getByText('Kalshi Strategy Command')).toBeInTheDocument();
-    expect(screen.getByText('Autonomous live')).toBeInTheDocument();
+    expect(screen.getByText('Deterministic fixture')).toBeInTheDocument();
+    expect(screen.getByText('No live API calls')).toBeInTheDocument();
+    expect(screen.getByText('Served by OmniRoute')).toBeInTheDocument();
+    expect(screen.getByText(/Verdict did not select or score/)).toBeInTheDocument();
   });
 
-  it('interacts with the kill switch in header', () => {
+  it('renders exact source and independent acceptance evidence', () => {
     render(<Home />);
-    const armKillSwitchButton = screen.getByText('Arm kill switch');
-    expect(armKillSwitchButton).toBeInTheDocument();
-
-    fireEvent.click(armKillSwitchButton);
-
-    expect(screen.getByText('Kill switch armed')).toBeInTheDocument();
-    expect(screen.getByText('Guarded mode')).toBeInTheDocument(); 
+    expect(screen.getAllByText('c91e8ab').length).toBeGreaterThan(0);
+    expect(screen.getByText('7ba921c')).toBeInTheDocument();
+    expect(screen.getByText('Independent regression suite')).toBeInTheDocument();
+    expect(screen.getByText('147 passed, exit 0')).toBeInTheDocument();
   });
 
-  it('selects a market in the MarketsPanel', () => {
+  it('shows advisory route lifecycle semantics without promotion controls', () => {
     render(<Home />);
-    const market2 = screen.getByText('Fed cuts rates in Sept?');
-    fireEvent.click(market2);
-    
-    // The OrderBookPanel title updates to selected market's title
-    const orderBookTitles = screen.getAllByText('Fed cuts rates in Sept?');
-    // We expect it to show up once in MarketRow and once in OrderBookPanel
-    expect(orderBookTitles.length).toBeGreaterThanOrEqual(2);
+    expect(screen.getByText('Advisory only')).toBeInTheDocument();
+    expect(screen.getByText(/cannot authorize a mutation or self-promote/)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /promote/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /model/i })).not.toBeInTheDocument();
   });
 
-  it('toggles bot status continuously', () => {
+  it('keeps acceptance unknown when independent evidence is stale', () => {
     render(<Home />);
-    const pauseBotButton = screen.getByText('Pause bot');
-    fireEvent.click(pauseBotButton);
+    fireEvent.click(screen.getByRole('button', { name: /Unknown candidate/ }));
+    expect(screen.getAllByText('unknown').length).toBeGreaterThan(0);
+    expect(screen.getByText(/Receipt exceeded the 24-hour freshness window/)).toBeInTheDocument();
+    expect(screen.getByText('0 failed; 1 unresolved')).toBeInTheDocument();
+  });
 
-    expect(screen.getByText('Resume bot')).toBeInTheDocument();
-    expect(screen.getByText('Paused')).toBeInTheDocument();
-
-    const resumeBotButton = screen.getByText('Resume bot');
-    fireEvent.click(resumeBotButton);
-
-    expect(screen.getByText('Pause bot')).toBeInTheDocument();
-    expect(screen.getByText('Autonomous live')).toBeInTheDocument();
+  it('switches to a denied report and explains the blocking evidence', () => {
+    render(<Home />);
+    fireEvent.click(screen.getByRole('button', { name: /Denied candidate/ }));
+    expect(screen.getAllByText('denied').length).toBeGreaterThan(0);
+    expect(screen.getByText('Protected config/policy.ts was modified')).toBeInTheDocument();
+    expect(screen.getByText(/passing tests cannot override boundary denial/)).toBeInTheDocument();
   });
 });
