@@ -2,7 +2,7 @@
 
 Read-only inspection surface for Trusted Change Reports and AutoDev Route Lab evidence.
 
-Ruflo coordinates work, OmniRoute serves routes, workers produce changes, Git and CI provide source and check evidence, and Verdict decides what that evidence may authorize. The Cockpit renders those decisions; it does not select models, score providers, mutate policy, or promote routes.
+Verdict Core plans and orchestrates the work and decides what evidence may authorize, Prime executes it, OmniRoute serves routes, workers produce changes, Git and CI provide source and check evidence. The Cockpit renders those decisions; it does not select models, score providers, mutate policy, or promote routes.
 
 ## Current slice
 
