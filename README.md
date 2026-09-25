@@ -18,6 +18,8 @@ Read-only fixture explorer for the canonical `ExecutionEnvelope` v1 contract fro
 
 **Path**: `/envelopes`
 
+**Screenshot**: ![Execution Envelopes UI](docs/screenshots/execution-envelopes.png)
+
 **Features**:
 - Displays all 6 canonical fixtures from verdict-core @ `80ebaf2`
 - Each fixture shows: verdict badge, policy digest, expiry, and eligibility decision
