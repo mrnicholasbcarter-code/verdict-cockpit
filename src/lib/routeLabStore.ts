@@ -56,6 +56,8 @@ export const trustedChangeReportSchema = z.object({
     correlation_id: z.string().nullable(),
     request_id: z.string().nullable(),
     policy_version: z.string(),
+    decision_id: z.string().nullable(),
+    receipt: z.record(z.unknown()).nullable(),
   }).strict(),
   outcome: z.object({
     schema_version: z.literal('1'),
@@ -112,7 +114,7 @@ const fixtureReports: TrustedChangeReport[] = [
     evaluatedAt: '2026-08-15T14:32:10.000Z',
     source: { repository: 'demo/authz-service', baseCommit: '7ba921c', patchCommit: 'c91e8ab', treeState: 'clean', patchDigest: 'sha256:8fd52f1d' },
     route: { gateway: 'OmniRoute', provider: 'openai', model_id: 'gpt-5.4-mini', requested_alias: 'cx/gpt-5.4-mini', endpoint: 'responses', protocol: 'openai-responses' },
-    routingDecision: { schema_version: '1', selected_route: { gateway: 'OmniRoute', model_id: 'gpt-5.4-mini' }, task_spec: { category: 'authorization-bugfix' }, candidate_snapshot: 'snapshot-1441', exclusions: [], policy_floor: 'protected', planner_mode: 'deterministic', explanation: 'Eligible route supplied by OmniRoute; Verdict applied the protected-effect floor.', adaptive_influence: {}, fallback_plan: [], correlation_id: 'corr-authz-01', request_id: 'req-authz-01', policy_version: 'autodev-v1', decision_id: 'decision-authz-01', receipt: { digest: 'sha256:abc', signed_at: '2024-01-01T00:00:00Z' } } as any,
+    routingDecision: { schema_version: '1', selected_route: { gateway: 'OmniRoute', model_id: 'gpt-5.4-mini' }, task_spec: { category: 'authorization-bugfix' }, candidate_snapshot: 'snapshot-1441', exclusions: [], policy_floor: 'protected', planner_mode: 'deterministic', explanation: 'Eligible route supplied by OmniRoute; Verdict applied the protected-effect floor.', adaptive_influence: {}, fallback_plan: [], correlation_id: 'corr-authz-01', request_id: 'req-authz-01', policy_version: 'autodev-v1', decision_id: null, receipt: null },
     outcome: { schema_version: '1', event_id: 'outcome-authz-01', event_type: 'change.acceptance', correlation_id: 'corr-authz-01', outcome: 'success', occurred_at: '2026-08-15T14:32:10.000Z', request_id: 'req-authz-01', verification: { independent: true }, quality: { acceptance: 1 }, latency_ms: 48210, cost: { usd: 0.18 }, retries: 0, fallbacks: [], provider_version: null, model_version: 'gpt-5.4-mini', details: { acceptance: 'accepted' } },
     checks: [
       { id: 'boundary', label: 'Owned-path boundary', authority: 'verdict', status: 'passed', evidenceDigest: 'sha256:a415bc', detail: '2 changed files; all inside src/auth/**' },
@@ -129,7 +131,7 @@ const fixtureReports: TrustedChangeReport[] = [
     evaluatedAt: '2026-08-15T14:20:03.000Z',
     source: { repository: 'demo/authz-service', baseCommit: '7ba921c', patchCommit: 'b71a4de', treeState: 'clean', patchDigest: 'sha256:1be2972a' },
     route: { gateway: 'OmniRoute', provider: 'anthropic', model_id: 'claude-sonnet-5', requested_alias: 'auto/coding', endpoint: 'messages', protocol: 'anthropic-messages' },
-    routingDecision: { schema_version: '1', selected_route: { gateway: 'OmniRoute', model_id: 'claude-sonnet-5' }, task_spec: { category: 'authorization-bugfix' }, candidate_snapshot: 'snapshot-1430', exclusions: [], policy_floor: 'protected', planner_mode: 'deterministic', explanation: 'Route identity recorded from OmniRoute; acceptance remains independent.', adaptive_influence: {}, fallback_plan: [], correlation_id: 'corr-authz-00', request_id: 'req-authz-00', policy_version: 'autodev-v1', decision_id: 'decision-authz-00', receipt: { digest: 'sha256:def', signed_at: '2024-01-01T00:00:00Z' } } as any,
+    routingDecision: { schema_version: '1', selected_route: { gateway: 'OmniRoute', model_id: 'claude-sonnet-5' }, task_spec: { category: 'authorization-bugfix' }, candidate_snapshot: 'snapshot-1430', exclusions: [], policy_floor: 'protected', planner_mode: 'deterministic', explanation: 'Route identity recorded from OmniRoute; acceptance remains independent.', adaptive_influence: {}, fallback_plan: [], correlation_id: 'corr-authz-00', request_id: 'req-authz-00', policy_version: 'autodev-v1', decision_id: null, receipt: null },
     outcome: { schema_version: '1', event_id: 'outcome-authz-00', event_type: 'change.acceptance', correlation_id: 'corr-authz-00', outcome: 'denied', occurred_at: '2026-08-15T14:20:03.000Z', request_id: 'req-authz-00', verification: { independent: true }, quality: {}, latency_ms: 51750, cost: { usd: 0.31 }, retries: 0, fallbacks: [], provider_version: null, model_version: 'claude-sonnet-5', details: { acceptance: 'denied' } },
     checks: [
       { id: 'boundary', label: 'Owned-path boundary', authority: 'verdict', status: 'failed', evidenceDigest: 'sha256:792ccb', detail: 'Protected config/policy.ts was modified' },
@@ -144,7 +146,7 @@ const fixtureReports: TrustedChangeReport[] = [
     evaluatedAt: '2026-08-15T15:05:44.000Z',
     source: { repository: 'demo/authz-service', baseCommit: '7ba921c', patchCommit: 'd42f6a9', treeState: 'clean', patchDigest: 'sha256:de481f09' },
     route: { gateway: 'OmniRoute', provider: 'google', model_id: 'gemini-2.5-pro', requested_alias: 'auto/coding', endpoint: 'generateContent', protocol: 'google-generative-language' },
-    routingDecision: { schema_version: '1', selected_route: { gateway: 'OmniRoute', model_id: 'gemini-2.5-pro' }, task_spec: { category: 'authorization-bugfix' }, candidate_snapshot: 'snapshot-1452', exclusions: [], policy_floor: 'protected', planner_mode: 'deterministic', explanation: 'Route identity recorded from OmniRoute; stale acceptance evidence prevents authorization.', adaptive_influence: {}, fallback_plan: [], correlation_id: 'corr-authz-02', request_id: 'req-authz-02', policy_version: 'autodev-v1', decision_id: 'decision-authz-02', receipt: { digest: 'sha256:ghi', signed_at: '2024-01-01T00:00:00Z' } } as any,
+    routingDecision: { schema_version: '1', selected_route: { gateway: 'OmniRoute', model_id: 'gemini-2.5-pro' }, task_spec: { category: 'authorization-bugfix' }, candidate_snapshot: 'snapshot-1452', exclusions: [], policy_floor: 'protected', planner_mode: 'deterministic', explanation: 'Route identity recorded from OmniRoute; stale acceptance evidence prevents authorization.', adaptive_influence: {}, fallback_plan: [], correlation_id: 'corr-authz-02', request_id: 'req-authz-02', policy_version: 'autodev-v1', decision_id: null, receipt: null },
     outcome: { schema_version: '1', event_id: 'outcome-authz-02', event_type: 'change.acceptance', correlation_id: 'corr-authz-02', outcome: 'unknown', occurred_at: '2026-08-15T15:05:44.000Z', request_id: 'req-authz-02', verification: { independent: true }, quality: {}, latency_ms: 56320, cost: { usd: 0.24 }, retries: 1, fallbacks: [], provider_version: null, model_version: 'gemini-2.5-pro', details: { acceptance: 'unknown' } },
     checks: [
       { id: 'boundary', label: 'Owned-path boundary', authority: 'verdict', status: 'passed', evidenceDigest: 'sha256:358ab2', detail: '1 changed file; inside src/auth/**' },
