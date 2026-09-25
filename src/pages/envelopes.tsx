@@ -1,5 +1,5 @@
 import Head from 'next/head';
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { verifyExecutionEnvelope, type EnvelopeVerdict } from '@/lib/verifyExecutionEnvelope';
 import manifest from '../../contracts/fixtures/execution-envelope/v1/manifest.json';
 import acceptedFixture from '../../contracts/fixtures/execution-envelope/v1/accepted.json';
@@ -148,10 +148,13 @@ function DetailPanel({ fixtureKey, verdict, data }: DetailPanelProps) {
 export default function ExecutionEnvelopes() {
   const [selectedFixture, setSelectedFixture] = useState<string | null>('accepted');
 
-  const fixtureResults = Object.entries(fixtures).map(([key, { name, data }]) => {
-    const verdict = verifyExecutionEnvelope(data, EVALUATION_TIME, EXPECTED_POLICY_DIGEST);
-    return { key, name, data, verdict };
-  });
+  const fixtureResults = React.useMemo(() => 
+    Object.entries(fixtures).map(([key, { name, data }]) => {
+      const verdict = verifyExecutionEnvelope(data, EVALUATION_TIME, EXPECTED_POLICY_DIGEST);
+      return { key, name, data, verdict };
+    }),
+    []
+  );
 
   const selectedResult = fixtureResults.find((r) => r.key === selectedFixture);
 
