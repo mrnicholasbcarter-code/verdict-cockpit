@@ -23,5 +23,5 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-      - run: pip install "git+https://github.com/mrnicholasbcarter-code/verdict-core.git@main"
+      - run: pip install "verdict-core==0.3.0"
       - run: verdict compat check --declared .verdict/compat-manifest.json --json
