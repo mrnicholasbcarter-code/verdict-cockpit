@@ -33,12 +33,11 @@
     "next-env.d.ts",
     "**/*.ts",
     "**/*.tsx",
-    ".next/types/**/*.ts"
+    ".next/types/**/*.ts",
+    "contracts/**/*.json"
   ],
   "exclude": [
     "node_modules",
-    "tests/**/*",
-    "jest.setup.ts",
-    "jest.config.mjs"
+    "tests/**/*"
   ]
 }
