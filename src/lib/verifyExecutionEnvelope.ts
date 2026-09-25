@@ -7,13 +7,15 @@
  * NEVER throws on untrusted input; malformed data returns REJECT_UNKNOWN.
  * 
  * Verification order (fail-closed):
- * 1. Schema validation (unknown fields, wrong types, structural errors)
+ * 1. Schema validation using canonical Zod schemas from @bodanglin/verdict-contracts
  * 2. Eligibility check
  * 3. Digest check  
  * 4. Expiry check
  *
- * Validates task_spec and verification_requirements field types to match Core Zod/Python parity.
+ * Uses the same Zod schemas as verdict-node for Python/Zod parity.
  */
+
+import { contractSchemas } from '@bodanglin/verdict-contracts';
 
 export type EnvelopeVerdict =
   | 'ACCEPT'
@@ -71,40 +73,6 @@ const CANONICAL_CONSTRAINT_KEYS = [
   'expires_at',
 ];
 
-const CANONICAL_TASK_SPEC_KEYS = [
-  'approvals',
-  'budget',
-  'capabilities',
-  'context',
-  'context_requirements',
-  'criticality',
-  'degraded_mode_policy',
-  'destructive_operation',
-  'effort',
-  'latency',
-  'latency_limit_ms',
-  'metadata',
-  'objective',
-  'parallelism',
-  'privacy',
-  'production_impact',
-  'reasoning',
-  'required_capabilities',
-  'risk',
-  'schema_version',
-  'task_type',
-  'tool_requirements',
-  'tools',
-  'verification',
-  'workflow',
-];
-
-const CANONICAL_VERIFICATION_KEYS = [
-  'checks',
-  'on_failure',
-  'schema_version',
-];
-
 const VALID_RISK_LEVELS = ['unknown', 'low', 'medium', 'high', 'critical'];
 
 /**
@@ -142,70 +110,6 @@ function isStringArray(value: unknown): boolean {
  */
 function isNonEmptyStringArray(value: unknown): boolean {
   return Array.isArray(value) && value.every(item => typeof item === 'string' && item.length > 0);
-}
-
-/**
- * Validate task_spec field types (Core parity).
- * This validates the TYPE of each field, matching Core Zod schemas.
- */
-function validateTaskSpecTypes(taskSpec: Record<string, unknown>): boolean {
-  // objective: must be a non-empty string (REQUIRED)
-  if (!('objective' in taskSpec) || typeof taskSpec.objective !== 'string' || taskSpec.objective.length === 0) {
-    return false;
-  }
-  
-  // task_type: must be a non-empty string (REQUIRED)
-  if (!('task_type' in taskSpec) || typeof taskSpec.task_type !== 'string' || taskSpec.task_type.length === 0) {
-    return false;
-  }
-  
-  // schema_version: must be a string
-  if ('schema_version' in taskSpec && typeof taskSpec.schema_version !== 'string') {
-    return false;
-  }
-  
-  // Arrays that must be string arrays if present
-  const arrayFields = ['capabilities', 'required_capabilities', 'tools', 'approvals'];
-  for (const field of arrayFields) {
-    if (field in taskSpec && !isStringArray(taskSpec[field])) {
-      return false;
-    }
-  }
-  
-  // budget, tool_requirements, context_requirements, metadata: must be objects if present
-  const objectFields = ['budget', 'tool_requirements', 'context_requirements', 'metadata'];
-  for (const field of objectFields) {
-    if (field in taskSpec) {
-      const value = taskSpec[field];
-      if (value !== null && !isPlainObject(value)) {
-        return false;
-      }
-    }
-  }
-  
-  return true;
-}
-
-/**
- * Validate verification_requirements field types (Core parity).
- */
-function validateVerificationTypes(verification: Record<string, unknown>): boolean {
-  // checks: must be an array
-  if (!('checks' in verification) || !Array.isArray(verification.checks)) {
-    return false;
-  }
-  
-  // schema_version: must be a string if present
-  if ('schema_version' in verification && typeof verification.schema_version !== 'string') {
-    return false;
-  }
-  
-  // on_failure: must be a string if present
-  if ('on_failure' in verification && typeof verification.on_failure !== 'string') {
-    return false;
-  }
-  
-  return true;
 }
 
 /**
@@ -255,25 +159,15 @@ export function verifyExecutionEnvelope(
       return 'REJECT_UNKNOWN';
     }
 
-    // Validate task_spec for unknown keys and field types
-    const taskSpec = env.task_spec as Record<string, unknown>;
-    for (const key of Object.keys(taskSpec)) {
-      if (!CANONICAL_TASK_SPEC_KEYS.includes(key)) {
-        return 'REJECT_UNKNOWN';
-      }
-    }
-    if (!validateTaskSpecTypes(taskSpec)) {
+    // Validate task_spec using canonical Zod schema
+    const taskSpecResult = contractSchemas.task_spec.safeParse(env.task_spec);
+    if (!taskSpecResult.success) {
       return 'REJECT_UNKNOWN';
     }
 
-    // Validate verification_requirements for unknown keys and field types
-    const verification = env.verification_requirements as Record<string, unknown>;
-    for (const key of Object.keys(verification)) {
-      if (!CANONICAL_VERIFICATION_KEYS.includes(key)) {
-        return 'REJECT_UNKNOWN';
-      }
-    }
-    if (!validateVerificationTypes(verification)) {
+    // Validate verification_requirements using canonical Zod schema
+    const verificationResult = contractSchemas.verification_plan.safeParse(env.verification_requirements);
+    if (!verificationResult.success) {
       return 'REJECT_UNKNOWN';
     }
 

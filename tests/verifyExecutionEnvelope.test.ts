@@ -288,6 +288,29 @@ describe('verifyExecutionEnvelope', () => {
     });
   });
 
+    describe('nested field validation probes (Core parity)', () => {
+    const nestedProbes = [
+      { id: 'effort_invalid', override: { task_spec: { ...acceptedFixture.task_spec, effort: 'extreme' } } },
+      { id: 'privacy_invalid', override: { task_spec: { ...acceptedFixture.task_spec, privacy: 'top' } } },
+      { id: 'risk_invalid', override: { task_spec: { ...acceptedFixture.task_spec, risk: 'nope' } } },
+      { id: 'latency_string', override: { task_spec: { ...acceptedFixture.task_spec, latency: 'x' } } },
+      { id: 'latency_limit_negative', override: { task_spec: { ...acceptedFixture.task_spec, latency_limit_ms: -1 } } },
+      { id: 'parallelism_invalid', override: { task_spec: { ...acceptedFixture.task_spec, parallelism: 'many' } } },
+      { id: 'destructive_string', override: { task_spec: { ...acceptedFixture.task_spec, destructive_operation: 'yes' } } },
+      { id: 'production_impact_number', override: { task_spec: { ...acceptedFixture.task_spec, production_impact: 1 } } },
+      { id: 'task_schema_version_2', override: { task_spec: { ...acceptedFixture.task_spec, schema_version: '2' } } },
+      { id: 'workflow_number', override: { task_spec: { ...acceptedFixture.task_spec, workflow: 5 } } },
+      { id: 'context_number', override: { task_spec: { ...acceptedFixture.task_spec, context: 5 } } },
+      { id: 'verif_schema_version_2', override: { verification_requirements: { ...acceptedFixture.verification_requirements, schema_version: '2' } } },
+    ];
+
+    test.each(nestedProbes)('$id -> REJECT_UNKNOWN', (probe) => {
+      const envelope = { ...acceptedFixture, ...probe.override };
+      const verdict = verifyExecutionEnvelope(envelope, EVALUATION_TIME, EXPECTED_POLICY_DIGEST);
+      expect(verdict).toBe('REJECT_UNKNOWN');
+    });
+  });
+
   describe('policy digest validation', () => {
     test('uppercase hex -> REJECT_UNKNOWN', () => {
       const envelope = {
