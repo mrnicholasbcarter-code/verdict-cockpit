@@ -12,8 +12,7 @@
  * 3. Digest check  
  * 4. Expiry check
  *
- * NOTE: This is a STRICT verifier that validates task_spec and verification_requirements
- * for unknown keys to match Core Zod/Python parity.
+ * Validates task_spec and verification_requirements field types to match Core Zod/Python parity.
  */
 
 export type EnvelopeVerdict =
@@ -146,6 +145,70 @@ function isNonEmptyStringArray(value: unknown): boolean {
 }
 
 /**
+ * Validate task_spec field types (Core parity).
+ * This validates the TYPE of each field, matching Core Zod schemas.
+ */
+function validateTaskSpecTypes(taskSpec: Record<string, unknown>): boolean {
+  // objective: must be a non-empty string (REQUIRED)
+  if (!('objective' in taskSpec) || typeof taskSpec.objective !== 'string' || taskSpec.objective.length === 0) {
+    return false;
+  }
+  
+  // task_type: must be a non-empty string (REQUIRED)
+  if (!('task_type' in taskSpec) || typeof taskSpec.task_type !== 'string' || taskSpec.task_type.length === 0) {
+    return false;
+  }
+  
+  // schema_version: must be a string
+  if ('schema_version' in taskSpec && typeof taskSpec.schema_version !== 'string') {
+    return false;
+  }
+  
+  // Arrays that must be string arrays if present
+  const arrayFields = ['capabilities', 'required_capabilities', 'tools', 'approvals'];
+  for (const field of arrayFields) {
+    if (field in taskSpec && !isStringArray(taskSpec[field])) {
+      return false;
+    }
+  }
+  
+  // budget, tool_requirements, context_requirements, metadata: must be objects if present
+  const objectFields = ['budget', 'tool_requirements', 'context_requirements', 'metadata'];
+  for (const field of objectFields) {
+    if (field in taskSpec) {
+      const value = taskSpec[field];
+      if (value !== null && !isPlainObject(value)) {
+        return false;
+      }
+    }
+  }
+  
+  return true;
+}
+
+/**
+ * Validate verification_requirements field types (Core parity).
+ */
+function validateVerificationTypes(verification: Record<string, unknown>): boolean {
+  // checks: must be an array
+  if (!('checks' in verification) || !Array.isArray(verification.checks)) {
+    return false;
+  }
+  
+  // schema_version: must be a string if present
+  if ('schema_version' in verification && typeof verification.schema_version !== 'string') {
+    return false;
+  }
+  
+  // on_failure: must be a string if present
+  if ('on_failure' in verification && typeof verification.on_failure !== 'string') {
+    return false;
+  }
+  
+  return true;
+}
+
+/**
  * Verify an ExecutionEnvelope against the v1 contract rules.
  * 
  * @param envelope - The envelope to verify
@@ -192,27 +255,25 @@ export function verifyExecutionEnvelope(
       return 'REJECT_UNKNOWN';
     }
 
-    // Validate task_spec for unknown keys and required keys
+    // Validate task_spec for unknown keys and field types
     const taskSpec = env.task_spec as Record<string, unknown>;
     for (const key of Object.keys(taskSpec)) {
       if (!CANONICAL_TASK_SPEC_KEYS.includes(key)) {
         return 'REJECT_UNKNOWN';
       }
     }
-    // task_spec must have at least schema_version
-    if (!('schema_version' in taskSpec)) {
+    if (!validateTaskSpecTypes(taskSpec)) {
       return 'REJECT_UNKNOWN';
     }
 
-    // Validate verification_requirements for unknown keys and required keys
+    // Validate verification_requirements for unknown keys and field types
     const verification = env.verification_requirements as Record<string, unknown>;
     for (const key of Object.keys(verification)) {
       if (!CANONICAL_VERIFICATION_KEYS.includes(key)) {
         return 'REJECT_UNKNOWN';
       }
     }
-    // verification_requirements must have at least schema_version
-    if (!('schema_version' in verification)) {
+    if (!validateVerificationTypes(verification)) {
       return 'REJECT_UNKNOWN';
     }
 

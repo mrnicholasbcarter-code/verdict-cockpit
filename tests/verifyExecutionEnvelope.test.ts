@@ -262,6 +262,32 @@ describe('verifyExecutionEnvelope', () => {
     });
   });
 
+    describe('nested field type validation', () => {
+    test('task_spec.objective = 5 (number) -> REJECT_UNKNOWN', () => {
+      const envelope = {
+        ...acceptedFixture,
+        task_spec: {
+          ...acceptedFixture.task_spec,
+          objective: 5, // should be a non-empty string
+        },
+      };
+      const verdict = verifyExecutionEnvelope(envelope, EVALUATION_TIME, EXPECTED_POLICY_DIGEST);
+      expect(verdict).toBe('REJECT_UNKNOWN');
+    });
+
+    test('verification_requirements.checks = "x" (string) -> REJECT_UNKNOWN', () => {
+      const envelope = {
+        ...acceptedFixture,
+        verification_requirements: {
+          ...acceptedFixture.verification_requirements,
+          checks: 'not-an-array', // should be an array
+        },
+      };
+      const verdict = verifyExecutionEnvelope(envelope, EVALUATION_TIME, EXPECTED_POLICY_DIGEST);
+      expect(verdict).toBe('REJECT_UNKNOWN');
+    });
+  });
+
   describe('policy digest validation', () => {
     test('uppercase hex -> REJECT_UNKNOWN', () => {
       const envelope = {
