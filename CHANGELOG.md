@@ -34,6 +34,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - MIT license file corrected to full text.
 - Package name and README aligned with canonical repository identity.
 
+### Fixed
+- **Node 20 build**: bundle the ESM-only `@bodanglin/verdict-contracts` package via
+  `transpilePackages` in `next.config.js`; `next build` now passes on Node 20 and 22.
+
 ## [0.1.0] - 2026-08-18
 
 - Initial release: Next.js dashboard skeleton with Zustand trading-store,
