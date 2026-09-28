@@ -37,7 +37,7 @@ Read-only fixture explorer for the canonical `ExecutionEnvelope` v1 contract fro
 
 **Verifier** (`src/lib/verifyExecutionEnvelope.ts`): Pure TypeScript implementation of verdict-core verification rules. Never throws on untrusted input. Fail-closed semantics: schema validation → eligibility → digest → expiry.
 
-**Vendored source**: `contracts/fixtures/execution-envelope/v1/` from verdict-core @ `80ebaf23278473bb48bde807c1c3867e980a6e14`. Manifest SHA-256 pins were recomputed from actual fixture content (original manifest had incorrect SHAs).
+**Vendored source**: `contracts/fixtures/execution-envelope/v1/` from verdict-core @ `bd70412f8050f89a8a8b6fd9c914e3cdadbf112f`. Manifest SHA-256 pins were recomputed from actual fixture content (original manifest had incorrect SHAs).
 
 There is no live Cockpit API in this repository. The current UI visibly labels fixture mode, and all displayed run IDs, commits, evidence digests, checks, route observations, costs, and latencies are illustrative deterministic data.
 
@@ -61,4 +61,4 @@ npm run build
 
 The fixture adapter imports canonical `RoutingDecision` and `OutcomeEvent` types from `@bodanglin/verdict-contracts`. Runtime input is validated locally because version `0.1.0` of that package exposes TypeScript declarations but no runtime parser export.
 
-ExecutionEnvelope fixtures are vendored from verdict-core (not published in the npm registry at the time of implementation). The TypeScript verifier in `src/lib/verifyExecutionEnvelope.ts` implements the v1 contract rules documented in [verdict-core EXECUTION_ENVELOPE_V1.md](https://github.com/mrnicholasbcarter-code/verdict-core/blob/80ebaf23278473bb48bde807c1c3867e980a6e14/docs/contracts/EXECUTION_ENVELOPE_V1.md).
+ExecutionEnvelope fixtures are vendored from verdict-core (not published in the npm registry at the time of implementation). The TypeScript verifier in `src/lib/verifyExecutionEnvelope.ts` implements the v1 contract rules documented in [verdict-core EXECUTION_ENVELOPE_V1.md](https://github.com/mrnicholasbcarter-code/verdict-core/blob/bd70412f8050f89a8a8b6fd9c914e3cdadbf112f/docs/contracts/EXECUTION_ENVELOPE_V1.md).
