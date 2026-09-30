@@ -59,6 +59,6 @@ npm run build
 
 ## Contract boundary
 
-The fixture adapter imports `@bodanglin/verdict-contracts` ^0.3.0 and uses `contractSchemas` for runtime validation; the local verifier adds envelope policy, digest, and expiry checks.
+The fixture adapter imports `@bodanglin/verdict-contracts` ^0.4.1 and uses `contractSchemas` for runtime validation; the local verifier adds envelope policy, digest, and expiry checks.
 
 ExecutionEnvelope fixtures are vendored from verdict-core (not published in the npm registry at the time of implementation). The TypeScript verifier in `src/lib/verifyExecutionEnvelope.ts` implements the v1 contract rules documented in [verdict-core EXECUTION_ENVELOPE_V1.md](https://github.com/mrnicholasbcarter-code/verdict-core/blob/bd70412f8050f89a8a8b6fd9c914e3cdadbf112f/docs/contracts/EXECUTION_ENVELOPE_V1.md).
